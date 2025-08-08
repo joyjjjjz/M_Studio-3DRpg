@@ -81,29 +81,50 @@ public class PlayerController :  SingleTon<PlayerController>
     }
     void FixedUpdate()
     {
+        // 检测角色是否死亡（当前生命值 ≤ 0）
         isDeath = characterStats.CurrentHealth <= 0;
+
+        // 如果角色已死亡，直接退出更新
         if (isDeath)
         {
             return;
         }
+
+        // 获取键盘输入（水平方向：A/D键，垂直方向：W/S键）
         horizontal = Input.GetAxisRaw("Horizontal");
         vertical = Input.GetAxisRaw("Vertical");
+
+        // 创建归一化移动方向向量（忽略Y轴）
         Vector3 dir = new Vector3(horizontal, 0f, vertical).normalized;
+
+        // 当输入方向有效时（输入量 ≥ 0.1）
         if ((dir.magnitude >= 0.1f))
         {
+            // 停止导航代理的自动寻路
             agent.isStopped = true;
 
+            // 计算目标角度：将输入方向转换为世界空间中的旋转角度（考虑摄像机偏转）
             float targetAngle = Mathf.Atan2(dir.x, dir.z) * Mathf.Rad2Deg + cam.eulerAngles.y;
+
+            // 使用平滑阻尼过渡当前旋转角度
             float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref turnSmoothVelocity, turnSmoothTime);
+
+            // 应用旋转到角色（仅绕Y轴旋转）
             transform.rotation = Quaternion.Euler(0f, angle, 0f);
 
+            // 将目标角度转换为移动方向
             Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
+
+            // 设置刚体速度（保持垂直速度，水平方向按指定速度移动）
             this.rb.velocity = this.rb.velocity.y * Vector3.up + moveDir * speed;
         }
         else
         {
+            // 无输入时：水平速度归零，保留垂直速度（如重力）
             this.rb.velocity = new Vector3(0, rb.velocity.y, 0);
         }
+
+        // 根据移动方向播放动画
         playAni(dir);
     }
     // 
